@@ -1,0 +1,20 @@
+{
+  "name": "samtaegi-pdf",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "dependencies": {
+    "@google/generative-ai": "^0.17.1",
+    "axios": "^1.7.7",
+    "discord.js": "^14.16.1",
+    "dotenv": "^16.4.5",
+    "request": "^2.88.2"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node ."
+  },
+  "author": "",
+  "license": "ISC",
+  "type": "module"
+}
