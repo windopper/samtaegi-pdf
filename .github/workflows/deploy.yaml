@@ -46,5 +46,5 @@ jobs:
                   sudo docker pull ${{ secrets.DOCKER_USERNAME }}/${{secrets.DOCKER_IMAGE_NAME}}:latest
                   sudo docker stop ${{secrets.DOCKER_CONTAINER_NAME}}
                   sudo docker rm ${{secrets.DOCKER_CONTAINER_NAME}}
-                  sudo docker run -d --name ${{secrets.DOCKER_CONTAINER_NAME}} ${{ secrets.DOCKER_USERNAME }}/${{secrets.DOCKER_IMAGE_NAME}}:latest -e DISCORD_TOKEN=${{ secrets.DISCORD_TOKEN }}
+                  sudo docker run -d --name ${{secrets.DOCKER_CONTAINER_NAME}} ${{ secrets.DOCKER_USERNAME }}/${{secrets.DOCKER_IMAGE_NAME}}:latest -e DISCORD_TOKEN=${{ secrets.DISCORD_TOKEN }} GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
 
