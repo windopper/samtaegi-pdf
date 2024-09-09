@@ -42,10 +42,9 @@ jobs:
                 username: ${{ secrets.USERNAME }}
                 key: ${{ secrets.SSH_KEY }}
                 script: |
-                  docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
-                  docker pull ${{ secrets.DOCKER_USERNAME }}/${{secrets.DOCKER_IMAGE_NAME}}:latest
-                  docker stop ${{secrets.DOCKER_CONTAINER_NAME}}
-                  docker rm ${{secrets.DOCKER_CONTAINER_NAME}}
-                  docker run -d --name ${{secrets.DOCKER_CONTAINER_NAME}} ${{ secrets.DOCKER_USERNAME }}/${{secrets.DOCKER_IMAGE_NAME}}:latest -e DISCORD_TOKEN=${{ secrets.DISCORD_TOKEN }}
+                  sudo docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+                  sudo docker pull ${{ secrets.DOCKER_USERNAME }}/${{secrets.DOCKER_IMAGE_NAME}}:latest
+                  sudo docker stop ${{secrets.DOCKER_CONTAINER_NAME}}
+                  sudo docker rm ${{secrets.DOCKER_CONTAINER_NAME}}
+                  sudo docker run -d --name ${{secrets.DOCKER_CONTAINER_NAME}} ${{ secrets.DOCKER_USERNAME }}/${{secrets.DOCKER_IMAGE_NAME}}:latest -e DISCORD_TOKEN=${{ secrets.DISCORD_TOKEN }}
 
-                  
