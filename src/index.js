@@ -8,7 +8,6 @@ const client = new Client({
 });
 import { handlePdfSummarizeRoute } from './service/summarize.js';
 import { configDotenv } from 'dotenv';
-import 'dotenv/config';
 
 configDotenv({
   path: `./.env.${process.env.NODE_ENV}`,

@@ -13,6 +13,14 @@ jobs:
         steps:
             - name: Checkout
               uses: actions/checkout@v2
+
+            - name: Create .env file
+              run: |
+                pwd
+                touch .env.production
+                echo DISCORD_TOKEN=${{ secrets.DISCORD_TOKEN }} >> .env.production
+                echo GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }} >> .env.production
+                cat .env.production
             
             - name: Set up Docker Buildx
               uses: docker/setup-buildx-action@v1
@@ -46,5 +54,5 @@ jobs:
                   sudo docker pull ${{ secrets.DOCKER_USERNAME }}/${{secrets.DOCKER_IMAGE_NAME}}:latest
                   sudo docker stop ${{secrets.DOCKER_CONTAINER_NAME}}
                   sudo docker rm ${{secrets.DOCKER_CONTAINER_NAME}}
-                  sudo docker run -d --name ${{secrets.DOCKER_CONTAINER_NAME}} ${{ secrets.DOCKER_USERNAME }}/${{secrets.DOCKER_IMAGE_NAME}}:latest -e DISCORD_TOKEN=${{ secrets.DISCORD_TOKEN }} GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+                  sudo docker run -d --name ${{secrets.DOCKER_CONTAINER_NAME}} ${{ secrets.DOCKER_USERNAME }}/${{secrets.DOCKER_IMAGE_NAME}}:latest
 
