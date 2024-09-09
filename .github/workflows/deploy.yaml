@@ -46,4 +46,6 @@ jobs:
                   docker pull ${{ secrets.DOCKER_USERNAME }}/${{secrets.DOCKER_IMAGE_NAME}}:latest
                   docker stop ${{secrets.DOCKER_CONTAINER_NAME}}
                   docker rm ${{secrets.DOCKER_CONTAINER_NAME}}
-                  docker run -d --name ${{secrets.DOCKER_CONTAINER_NAME}} ${{ secrets.DOCKER_USERNAME }}/${{secrets.DOCKER_IMAGE_NAME}}:latest -e DISCORD_TOKEN=${{ secrets.DISCORD_TOKEN }} 
+                  docker run -d --name ${{secrets.DOCKER_CONTAINER_NAME}} ${{ secrets.DOCKER_USERNAME }}/${{secrets.DOCKER_IMAGE_NAME}}:latest -e DISCORD_TOKEN=${{ secrets.DISCORD_TOKEN }}
+
+                  
