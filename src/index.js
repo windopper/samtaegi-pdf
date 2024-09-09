@@ -6,9 +6,13 @@ const client = new Client({
     GatewayIntentBits.MessageContent,
   ],
 });
-import 'dotenv/config'
-import { handlePdfSummarizeRoute } from './src/service/summarize.js';
+import { handlePdfSummarizeRoute } from './service/summarize.js';
+import { configDotenv } from 'dotenv';
+import 'dotenv/config';
 
+configDotenv({
+  path: `./.env.${process.env.NODE_ENV}`,
+})
 
 client.on('ready', () => {
   console.log(`Logged in as ${client.user.tag}!`);

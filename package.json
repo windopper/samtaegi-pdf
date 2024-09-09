@@ -8,11 +8,11 @@
     "axios": "^1.7.7",
     "discord.js": "^14.16.1",
     "dotenv": "^16.4.5",
-    "request": "^2.88.2"
+    "samtaegi-pdf": "file:"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node ."
+    "start": "NODE_ENV=development node ./src/index.js"
   },
   "author": "",
   "license": "ISC",
