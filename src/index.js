@@ -35,16 +35,16 @@ client.on('messageCreate', async message => {
   try {
     handlePdfSummarizeRoute(message);
   
-    if (message.channel.isThread()) {
-      const thread = message.channel;
-      const owner = thread.ownerId;
+    // if (message.channel.isThread()) {
+    //   const thread = message.channel;
+    //   const owner = thread.ownerId;
   
-      if (owner === client.user.id) {
-        const allMessages = await thread.messages.fetch();
-        const allMessagesArray = allMessages;
-        console.log(allMessagesArray);
-      }
-    }
+    //   if (owner === client.user.id) {
+    //     const allMessages = await thread.messages.fetch();
+    //     const allMessagesArray = allMessages;
+    //     console.log(allMessagesArray);
+    //   }
+    // }
 
   } catch (error) {
     console.error(error);

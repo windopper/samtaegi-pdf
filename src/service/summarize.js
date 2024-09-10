@@ -34,19 +34,24 @@ export async function handlePdfSummarizeRoute(message) {
       return;
     }
 
-    const [filePath, thread] = await Promise.all([
-      // download attachment
-      fetchAttachment(attachment.url, attachment.name),
+    // check if the attachments folder exists
+    await checkAttachmentsFolderExists();
 
-      // create new thread
-      createNewThread(message.channel, attachment.name),
-    ]);
+    const messageChannel = message.channel;
+
+    // download the attachment
+    const botMessage = await message.reply("파일 다운로드 중...");
+    const filePath = await fetchAttachment(messageChannel, attachment.url, attachment.name);
+
+    botMessage.edit("파일 다운로드 완료! 요약 중...");
+    const thread = await createNewThread(messageChannel, attachment.name);
 
     // mention thread
-    await message.reply(`스레드가 생성되었습니다! ${thread}`);
+    botMessage.edit(`파일 다운로드 완료! ${thread} 에서 요약 중...`);
 
     thread.sendTyping();
 
+    // summarize the PDF file
     const stream = streamPDFSummarizer(filePath, attachment.name);
 
     let response = "";
@@ -59,21 +64,41 @@ export async function handlePdfSummarizeRoute(message) {
     if (response.length > 0) {
       await thread.send(response);
     }
+
+    botMessage.edit(`요약 완료! ${thread} 에서 확인해주세요!`);
+
+    deleteFile(filePath);
+  }
+}
+
+async function checkAttachmentsFolderExists() {
+  try {
+    await fs.promises.access("./attachments");
+  } catch (err) {
+    if (err.code === "ENOENT") {
+      await fs.promises.mkdir("./attachments");
+    } else {
+      throw err;
+    }
   }
 }
 
 /**
  *
+ * @param {TextChannel} channel
  * @param {*} url
  * @param {*} name
  * @returns {Promise<string>} file path
  */
-export async function fetchAttachment(url, name) {
+export async function fetchAttachment(channel, url, name) {
   console.log("Downloading attachment from", url);
   const { data } = await axios.get(url, { responseType: "stream" });
   data.pipe(
     fs.createWriteStream(`./attachments/${name}`, {
       autoClose: true,
+    }).on("error", (err) => {
+      console.error(err);
+      channel.send("파일 다운로드 중 오류가 발생했어요!");
     })
   );
   const promise = new Promise((resolve, reject) => {
@@ -110,6 +135,8 @@ export async function* streamPDFSummarizer(filePath, fileName) {
   for await (const chunk of stream) {
     yield chunk;
   }
+
+  reader.deleteFile();
 }
 
 /**
@@ -131,4 +158,12 @@ export function splitSendMessages(text, thread) {
   }
 
   return text;
+}
+
+function deleteFile(filePath) {
+  try {
+    fs.unlinkSync(`${filePath}`);
+  } catch (err) {
+    console.error(err);
+  }
 }
