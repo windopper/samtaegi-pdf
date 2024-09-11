@@ -1,6 +1,5 @@
-node_modules
-
-.env
 .env.development
+.env
 
-build
+attachments/
+node_modules/
