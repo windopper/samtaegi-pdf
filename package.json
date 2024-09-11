@@ -4,11 +4,17 @@
   "description": "",
   "main": "index.js",
   "dependencies": {
+    "@discordjs/opus": "^0.9.0",
+    "@discordjs/voice": "^0.17.0",
+    "@distube/ytdl-core": "^4.14.4",
     "@google/generative-ai": "^0.17.1",
     "axios": "^1.7.7",
     "discord.js": "^14.16.1",
     "dotenv": "^16.4.5",
-    "samtaegi-pdf": "file:"
+    "libsodium-wrappers": "^0.7.15",
+    "mongodb": "^6.8.1",
+    "samtaegi-pdf": "file:",
+    "youtubei": "^1.5.4"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
