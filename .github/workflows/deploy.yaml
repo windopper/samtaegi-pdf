@@ -20,7 +20,7 @@ jobs:
                 touch .env.production
                 echo DISCORD_TOKEN=${{ secrets.DISCORD_TOKEN }} >> .env.production
                 echo GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }} >> .env.production
-                echo MONGO_DB_URI=mongodb+srv://${{ secrets.MONGO_DB_PASSWORD }}@samtaegi.tkeu8.mongodb.net/?retryWrites=true&w=majority&appName=samtaegi >> .env.production
+                echo MONGO_DB_PASSWORD=${{ secrets.MONGO_DB_PASSWORD }} >> .env.production
                 cat .env.production
             
             - name: Set up Docker Buildx

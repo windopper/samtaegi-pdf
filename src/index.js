@@ -19,11 +19,16 @@ import { checkMongoDBConnection } from './api/index.js';
 import { MongoClient, ServerApiVersion } from 'mongodb';
 import { handleMusicChannelDelete, handleMusicInteractionRoute, handleMusicMessageDelete, handleMusicQueueInteractionRoute, handleMusicRoute, initiateMusicAppChannel } from './service/music.js';
 
-export const mongoClient = new MongoClient(process.env.MONGO_DB_URI, { serverApi: {
-  version: ServerApiVersion.v1,
-  strict: true,
-  deprecationErrors: true,
-}});
+export const mongoClient = new MongoClient(
+  `mongodb+srv://${process.env.MONGO_DB_PASSWORD}@samtaegi.tkeu8.mongodb.net/?retryWrites=true&w=majority&appName=samtaegi`,
+  {
+    serverApi: {
+      version: ServerApiVersion.v1,
+      strict: true,
+      deprecationErrors: true,
+    },
+  }
+);
 
 checkMongoDBConnection(mongoClient);
 
