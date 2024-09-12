@@ -8,6 +8,7 @@
     "@discordjs/voice": "^0.17.0",
     "@distube/ytdl-core": "^4.14.4",
     "@google/generative-ai": "^0.17.1",
+    "@ybd-project/ytdl-core": "^5.1.2",
     "axios": "^1.7.7",
     "discord.js": "^14.16.1",
     "dotenv": "^16.4.5",

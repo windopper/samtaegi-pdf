@@ -18,6 +18,7 @@ configDotenv({
 import { checkMongoDBConnection } from './api/index.js';
 import { MongoClient, ServerApiVersion } from 'mongodb';
 import { handleMusicChannelDelete, handleMusicInteractionRoute, handleMusicMessageDelete, handleMusicQueueInteractionRoute, handleMusicRoute, initiateMusicAppChannel } from './service/music.js';
+import { YtdlCore } from '@ybd-project/ytdl-core';
 
 export const mongoClient = new MongoClient(
   `mongodb+srv://${process.env.MONGO_DB_PASSWORD}@samtaegi.tkeu8.mongodb.net/?retryWrites=true&w=majority&appName=samtaegi`,
@@ -31,6 +32,12 @@ export const mongoClient = new MongoClient(
 );
 
 checkMongoDBConnection(mongoClient);
+
+export const youtubeOauth2 = new YtdlCore.OAuth2({
+  accessToken: process.env.YOUTUBE_ACCESS_TOKEN,
+  refreshToken: process.env.YOUTUBE_REFRESH_TOKEN,
+  expiryDate: process.env.YOUTUBE_EXPIRY_DATE,
+})
 
 client.login(process.env.DISCORD_TOKEN);
 

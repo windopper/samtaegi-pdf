@@ -21,6 +21,9 @@ jobs:
                 echo DISCORD_TOKEN=${{ secrets.DISCORD_TOKEN }} >> .env.production
                 echo GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }} >> .env.production
                 echo MONGO_DB_PASSWORD=${{ secrets.MONGO_DB_PASSWORD }} >> .env.production
+                echo YOUTUBE_ACCESS_TOKEN=${{ secrets.YOUTUBE_ACCESS_TOKEN }} >> .env.production
+                echo YOUTUBE_REFRESH_TOKEN=${{ secrets.YOUTUBE_REFRESH_TOKEN }} >> .env.production
+                echo YOUTUBE_EXPIRY_DATE=${{ secrets.YOUTUBE_EXPIRY_DATE }} >> .env.production
                 cat .env.production
             
             - name: Set up Docker Buildx

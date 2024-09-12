@@ -1,6 +1,6 @@
 FROM node:18.18.0
 WORKDIR /app
-COPY resource ./resource
+# COPY resource ./resource
 COPY src ./src
 COPY .env.production .
 COPY package.json .

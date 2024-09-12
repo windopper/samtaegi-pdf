@@ -1,12 +1,13 @@
 import { AudioPlayerStatus, createAudioPlayer, createAudioResource, entersState, getVoiceConnection, joinVoiceChannel, VoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
 import { ButtonInteraction, Guild, Message, TextChannel, User } from "discord.js";
-import ytdl from "@distube/ytdl-core";
+// import ytdl from "@distube/ytdl-core";
 import { Client, PlaylistVideos, VideoCompact } from "youtubei";
 import EventEmitter from "events";
-import fs from "fs";
+import { YtdlCore } from "@ybd-project/ytdl-core";
+import { youtubeOauth2 } from "../index.js"
 
 const youtube = new Client();
-const agent = ytdl.createAgent(JSON.parse(fs.readFileSync('./resource/cookie.json')));
+// const agent = ytdl.createAgent(JSON.parse(fs.readFileSync('./resource/cookie.json')));
 
 export class MusicQueueItem {
     /**
@@ -184,7 +185,10 @@ class MusicQueue extends EventEmitter {
              * @type {MusicQueueItem}
              */
             const song = this.queue.shift();
-            const stream = ytdl(song.url, { agent, filter: "audioonly", dlChunkSize: 10 * 1024 * 1024, highWaterMark: 1 << 25 }).on("error", err => {
+            const ytdl = new YtdlCore({
+                oauth2: youtubeOauth2,
+            })
+            const stream = ytdl.download(song.url, { filter: "audioonly", dlChunkSize: 10 * 1024 * 1024, highWaterMark: 1 << 25 }).on("error", err => {
                 this.emit("error", err);
             })
             this.resource = createAudioResource(stream, {
@@ -290,16 +294,19 @@ export async function addQueue(message) {
 
     const playlist = await youtube.getPlaylist(song);
     
-    if (ytdl.validateURL(song)) {
-        const info = await ytdl.getBasicInfo(song, { agent });
+    if (YtdlCore.validateURL(song)) {
+        const ytdl = new YtdlCore({
+            oauth2: youtubeOauth2,
+        })
+        const info = await ytdl.getFullInfo(song)
 
         const queueItem = new MusicQueueItem(
           info.videoDetails.videoId,
           info.videoDetails.title,
-          info.videoDetails.author.name,
-          info.videoDetails.video_url,
+          info.videoDetails.ownerChannelName,
+          info.videoDetails.videoUrl,
           info.videoDetails.thumbnails[0].url,
-          info.videoDetails.lengthSeconds
+          info.videoDetails.lengthSeconds,
         );
 
         queue.add(queueItem);
