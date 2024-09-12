@@ -6,7 +6,7 @@ import EventEmitter from "events";
 import fs from "fs";
 
 const youtube = new Client();
-// const agent = ytdl.createAgent(JSON.parse(fs.readFileSync('./resource/cookie.json')));
+const agent = ytdl.createAgent(JSON.parse(fs.readFileSync('./resource/cookie.json')));
 
 export class MusicQueueItem {
     /**
@@ -184,7 +184,7 @@ class MusicQueue extends EventEmitter {
              * @type {MusicQueueItem}
              */
             const song = this.queue.shift();
-            const stream = ytdl(song.url, { filter: "audioonly", dlChunkSize: 10 * 1024 * 1024, highWaterMark: 1 << 25 }).on("error", err => {
+            const stream = ytdl(song.url, { agent, filter: "audioonly", dlChunkSize: 10 * 1024 * 1024, highWaterMark: 1 << 25 }).on("error", err => {
                 this.emit("error", err);
             })
             this.resource = createAudioResource(stream, {
@@ -291,7 +291,7 @@ export async function addQueue(message) {
     const playlist = await youtube.getPlaylist(song);
     
     if (ytdl.validateURL(song)) {
-        const info = await ytdl.getBasicInfo(song);
+        const info = await ytdl.getBasicInfo(song, { agent });
 
         const queueItem = new MusicQueueItem(
           info.videoDetails.videoId,
