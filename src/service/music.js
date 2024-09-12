@@ -187,17 +187,17 @@ export async function handleMusicRoute(message) {
   if (message.channel.type !== ChannelType.GuildText) return;
   if (message.author.bot) return;
 
+  const channelId = message.channel.id;
+  const guildId = message.guild.id;
+  const { channel: applicationChannel } = getMusicChannelCache(guildId);
+  if (applicationChannel?.id !== channelId) return;
+
   try {
-    const channelId = message.channel.id;
-    const guildId = message.guild.id;
-
-    const { channel: applicationChannel } = getMusicChannelCache(guildId);
-
-    if (applicationChannel?.id !== channelId) return;
-
     await playMusic(message);
   } catch (err) {
+    console.error(err);
   } finally {
+    // console.log("delete message");
     await message.delete();
   }
 }

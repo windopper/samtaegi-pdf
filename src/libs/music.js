@@ -3,8 +3,10 @@ import { ButtonInteraction, Guild, Message, TextChannel, User } from "discord.js
 import ytdl from "@distube/ytdl-core";
 import { Client, PlaylistVideos, VideoCompact } from "youtubei";
 import EventEmitter from "events";
+import fs from "fs";
 
 const youtube = new Client();
+// const agent = ytdl.createAgent(JSON.parse(fs.readFileSync('./resource/cookie.json')));
 
 export class MusicQueueItem {
     /**
