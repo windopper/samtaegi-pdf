@@ -31,6 +31,7 @@ checkMongoDBConnection(mongoClient);
 const { YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET } = process.env;
 
 export let youtubeOauth2 = null;
+
 (async () => {
   const YOUTUBE_TOKEN = await getToken();
 

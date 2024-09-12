@@ -227,10 +227,17 @@ export function getMusicQueueReplyMessageButton(hasPrevious, hasNext, currentPag
  * @returns {StringSelectMenuBuilder}
  */
 export function getMusicQueueItemSelectMenu(queue, defaultId = "") {
-    const select = new StringSelectMenuBuilder().setCustomId("musicQueueSelect").setPlaceholder("대기열 선택")
-        .addOptions(
-            queue.map((item, index) => new StringSelectMenuOptionBuilder().setLabel(item.title).setValue(item.id).setDefault(item.id === defaultId))
+    let select = new StringSelectMenuBuilder()
+      .setCustomId("musicQueueSelect")
+      .setPlaceholder("대기열 선택")
+      .addOptions(
+        queue.map((item, index) =>
+          new StringSelectMenuOptionBuilder()
+            .setLabel(item.title)
+            .setValue(item.id)
+            .setDefault(item.id === defaultId)
         )
+      );
 
     const row = new ActionRowBuilder().addComponents([select]);
     return row;

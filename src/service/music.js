@@ -258,7 +258,7 @@ export async function handleMusicInteractionRoute(interaction) {
     console.error(error);
 
     const reply = await interaction.reply({
-      embeds: [getMusicErrorReplyMessageEmbed(interaction.user)],
+      embeds: getMusicErrorReplyMessageEmbed(interaction.user),
       ephemeral: true,
     })
 
@@ -427,7 +427,7 @@ export async function queue(message) {
 
   await message.reply({
     embeds: getMusicQueueReplyMessageEmbed(message.user, q, 1, queueLength),
-    components: [
+    components: q.length === 0 ? [] : [
       getMusicQueueReplyMessageButton(false, queueLength > 1, 1),
       getMusicQueueItemSelectMenu(q),
     ],
@@ -454,7 +454,7 @@ async function queuePage(interaction, page) {
       page,
       queueLength
     ),
-    components: [
+    components: q.length === 0 ? [] : [
       getMusicQueueReplyMessageButton(page > 1, page < queueLength, page),
       getMusicQueueItemSelectMenu(q),
     ],
