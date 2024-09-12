@@ -320,6 +320,7 @@ export async function addQueue(message) {
 
       videos.forEach((video) => {
         const url = `https://www.youtube.com/watch?v=${video.id}`;
+        
         const queueItem = new MusicQueueItem(
           video.id,
           video.title,
@@ -335,6 +336,7 @@ export async function addQueue(message) {
       queue.addPlaylist(queueItems);
       return queueItems;
     }
+    return null;
 }
 
 /**

@@ -36,6 +36,8 @@ import {
   getDefaultMusicDashboardEmbed,
   getMusicCannotFindReplyMessageEmbed,
   getMusicDashboardEmbedButton,
+  getMusicErrorReplyMessageEmbed,
+  getMusicInvalidKeywordReplyMessageEmbed,
   getMusicPlayReplyMessageEmbed,
   getMusicQueueItemSelectMenu,
   getMusicQueueReplyMessageButton,
@@ -46,6 +48,7 @@ import {
   getNowPlayingMusicDashboardEmbed,
   getPausedMusicDashboardEmbed,
 } from "../embeds/music.js";
+import { validateInMusicChannel, validateSameVoiceChannel } from "../handler/music.js";
 
 /**
  *
@@ -94,6 +97,7 @@ async function getOrCreateMusicAppChannel(guild) {
     name: "삼태기 음악 채널",
     type: ChannelType.GuildText,
     reason: "삼태기 음악 채널 생성",
+    rateLimitPerUser: 3,
   });
 
   return applicationChannel;
@@ -193,6 +197,7 @@ export async function handleMusicRoute(message) {
   if (applicationChannel?.id !== channelId) return;
 
   try {
+    if (!await validateInMusicChannel(message)) return;
     await playMusic(message);
   } catch (err) {
     console.error(err);
@@ -219,17 +224,22 @@ export async function handleMusicInteractionRoute(interaction) {
     if (applicationChannel?.id !== channelId) return;
     if (dashboard.id !== interaction.message.id) return;
 
+    if (!await validateInMusicChannel(interaction)) return;
+    if (!await validateSameVoiceChannel(interaction)) return;
+
     const customId = interaction.customId;
 
     await dashboard.edit({
       embeds: dashboard.embeds,
-      components: [getMusicDashboardEmbedButton(!isPaused(guildId), true)],
+      components: [getMusicDashboardEmbedButton(!isPaused(guildId))],
     });
 
     if (customId === "skip") {
       await skipMusic(interaction);
+      return;
     } else if (customId === "stop") {
       await leaveVoiceChannel(interaction);
+      return;
     } else if (customId === "pause") {
       await pauseMusic(interaction);
     } else if (customId === "resume") {
@@ -240,10 +250,21 @@ export async function handleMusicInteractionRoute(interaction) {
         embeds: dashboard.embeds,
         components: [getMusicDashboardEmbedButton(!isPaused(guildId))],
       });
-    } else if (customId === "function") {
+      return;
     }
+
+    updateDashboardOnQueueState(interaction);
   } catch (error) {
     console.error(error);
+
+    const reply = await interaction.reply({
+      embeds: [getMusicErrorReplyMessageEmbed(interaction.user)],
+      ephemeral: true,
+    })
+
+    setTimeout(() => {
+      reply.delete().catch(() => null);
+    }, 5000);
   }
 }
 
@@ -337,9 +358,19 @@ export async function playMusic(message) {
   if (!checkHasMusicQueue(message.guild.id)) joinVoiceChannel(message);
   const queueItem = await addQueue(message);
 
-  const replied = await message.reply({
-    embeds: getMusicPlayReplyMessageEmbed(message.author, queueItem),
-  });
+  let replied = null;
+
+  // 검색되지 않은 경우
+  if (queueItem === null) {
+    replied = await message.reply({
+      embeds: getMusicInvalidKeywordReplyMessageEmbed(message.author),
+      ephemeral: true,
+    });
+  } else {
+    replied = await message.reply({
+      embeds: getMusicPlayReplyMessageEmbed(message.author, queueItem),
+    });
+  }
 
   // delete the message after 5 seconds
   setTimeout(() => {
@@ -355,8 +386,6 @@ export async function pauseMusic(message) {
   const currentSong = getCurrentSong(message.guild.id);
 
   pause(message);
-
-  updateDashboardOnQueueState(message);
 }
 
 /**
@@ -367,8 +396,6 @@ export async function resumeMusic(message) {
   const currentSong = getCurrentSong(message.guild.id);
 
   resume(message);
-
-  updateDashboardOnQueueState(message);
 }
 
 /**

@@ -149,6 +149,20 @@ export function getMusicCannotFindReplyMessageEmbed(author) {
 /**
  * 
  * @param {User} author 
+ * @returns 
+ */
+export function getMusicInvalidKeywordReplyMessageEmbed(author) {
+    return [{
+        "author": {
+            "icon_url": author.displayAvatarURL(),
+            "name": `유튜브 링크 또는 플레이리스트 아이디를 입력해주세요!`
+        }
+    }]
+}
+
+/**
+ * 
+ * @param {User} author 
  * @param {string} content
  * @returns {readonly (import('discord.js').APIEmbed | import('discord.js').JSONEncodable<import('discord.js').APIEmbed>)[]}
  */
@@ -220,4 +234,41 @@ export function getMusicQueueItemSelectMenu(queue, defaultId = "") {
 
     const row = new ActionRowBuilder().addComponents([select]);
     return row;
+}
+
+/**
+ * @param {User} author
+ * @returns {readonly (import('discord.js').APIEmbed | import('discord.js').JSONEncodable<import('discord.js').APIEmbed>)[]}
+ */
+export function getUserAndBotNotInSameVoiceChannel(author) {
+    return {
+        "author": {
+            "icon_url": author.displayAvatarURL(),
+            "name": "음성 채널이 다르네요!",
+        },
+        "color": 0xff0000,
+    }
+}
+
+export function getUserNotInVoiceChannel(author) {
+    return {
+        "author": {
+            "icon_url": author.displayAvatarURL(),
+            "name": "음성 채널에 들어가주세요!",
+        },
+    }
+}
+
+/**
+ * @param {User} author
+ * @returns {readonly (import('discord.js').APIEmbed | import('discord.js').JSONEncodable<import('discord.js').APIEmbed>)[]}
+ */
+export function getMusicErrorReplyMessageEmbed(author) {
+    return [{
+        "author": {
+            "icon_url": author.displayAvatarURL(),
+            "name": "오류 발생!",
+        },
+        "color": 0xff0000,
+    }]
 }

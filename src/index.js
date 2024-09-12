@@ -1,15 +1,5 @@
 import { ChannelType, Client, GatewayIntentBits } from 'discord.js';
 import { handlePdfSummarizeRoute } from './service/summarize.js';
-
-const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,
-    GatewayIntentBits.GuildVoiceStates,
-  ],
-});
-
 import { configDotenv } from 'dotenv';
 configDotenv({
   path: `./.env.${process.env.NODE_ENV}`,
@@ -19,6 +9,9 @@ import { checkMongoDBConnection } from './api/index.js';
 import { MongoClient, ServerApiVersion } from 'mongodb';
 import { handleMusicChannelDelete, handleMusicInteractionRoute, handleMusicMessageDelete, handleMusicQueueInteractionRoute, handleMusicRoute, initiateMusicAppChannel } from './service/music.js';
 import { YtdlCore } from '@ybd-project/ytdl-core';
+import { getToken } from './api/music.js';
+
+//////////////////////////////////////////
 
 export const mongoClient = new MongoClient(
   `mongodb+srv://${process.env.MONGO_DB_PASSWORD}@samtaegi.tkeu8.mongodb.net/?retryWrites=true&w=majority&appName=samtaegi`,
@@ -33,13 +26,42 @@ export const mongoClient = new MongoClient(
 
 checkMongoDBConnection(mongoClient);
 
-export const youtubeOauth2 = new YtdlCore.OAuth2({
-  accessToken: process.env.YOUTUBE_ACCESS_TOKEN,
-  refreshToken: process.env.YOUTUBE_REFRESH_TOKEN,
-  expiryDate: process.env.YOUTUBE_EXPIRY_DATE,
-})
+//////////////////////////////////////////
+
+const { YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET } = process.env;
+
+export let youtubeOauth2 = null;
+(async () => {
+  const YOUTUBE_TOKEN = await getToken();
+
+  youtubeOauth2 = new YtdlCore.OAuth2({
+    accessToken: YOUTUBE_TOKEN.accessToken,
+    refreshToken: YOUTUBE_TOKEN.refreshToken,
+    expiryDate: YOUTUBE_TOKEN.expiryDate,
+    clientData: {
+      clientId: YOUTUBE_CLIENT_ID,
+      clientSecret: YOUTUBE_CLIENT_SECRET,
+    }
+  });
+
+  console.log(youtubeOauth2);
+})()
+
+
+//////////////////////////////////////////
+
+export const client = new Client({
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildVoiceStates,
+  ],
+});
 
 client.login(process.env.DISCORD_TOKEN);
+
+//////////////////////////////////////////
 
 process.on("uncaughtException", err => {
   console.error(err);
