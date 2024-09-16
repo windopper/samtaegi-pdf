@@ -16,7 +16,15 @@ jobs:
 
             - name: Get version from package.json
               id: get_version
-              run: echo "PACKAGE_VERSION=$(jq -r .version < package.json)" >> $GITHUB_ENV
+              run: |
+                VERSION=$(jq -r .version < package.json)
+                echo $VERSION > version.txt
+
+            - name: Upload version as artifact
+              uses: actions/upload-artifact@v3
+              with:
+                name: version
+                path: version.txt
 
             - name: Create .env file
               run: |
@@ -50,6 +58,16 @@ jobs:
         needs: build
         runs-on: ubuntu-latest
         steps:
+            - name: Download version artifact
+              uses: actions/download-artifact@v3
+              with:
+                name: version
+
+            - name: Set version from artifact
+              run: |
+                VERSION=$(cat version.txt)
+                echo "PACKAGE_VERSION=$VERSION" >> $GITHUB_ENV
+
             - name: ssh connect & production
               uses: appleboy/ssh-action@master
               with:
