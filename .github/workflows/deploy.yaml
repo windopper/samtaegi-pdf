@@ -58,7 +58,7 @@ jobs:
                 key: ${{ secrets.SSH_KEY }}
                 script: |
                   sudo docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
-                  sudo docker pull ${{ secrets.DOCKER_USERNAME }}/${{secrets.DOCKER_IMAGE_NAME}}:latest
+                  sudo docker pull ${{ secrets.DOCKER_USERNAME }}/${{secrets.DOCKER_IMAGE_NAME}}:${{ env.PACKAGE_VERSION }}
                   sudo docker stop ${{secrets.DOCKER_CONTAINER_NAME}}
                   sudo docker rm ${{secrets.DOCKER_CONTAINER_NAME}}
                   sudo docker run -d --restart on-failure --name ${{secrets.DOCKER_CONTAINER_NAME}} ${{ secrets.DOCKER_USERNAME }}/${{secrets.DOCKER_IMAGE_NAME}}:${{ env.PACKAGE_VERSION }}
