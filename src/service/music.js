@@ -31,6 +31,8 @@ import {
   remove,
   top,
   findSongById,
+  setLoop,
+  getLoop,
 } from "../libs/music.js";
 import {
   getDefaultMusicDashboardEmbed,
@@ -49,6 +51,7 @@ import {
   getPausedMusicDashboardEmbed,
 } from "../embeds/music.js";
 import { validateInMusicChannel, validateSameVoiceChannel } from "../handler/music.js";
+import logger from "../logger.js";
 
 /**
  *
@@ -127,16 +130,17 @@ async function getOrCreateAppDashboard(guild, applicationChannel) {
   if (checkHasMusicQueue(guild.id)) {
     const queue = getMusicQueue(guild.id);
     const currentSong = getCurrentSong(guild.id);
+    const loopType = getLoop(guild.id);
 
     if (isPaused(guild.id)) {
       dashboard = await applicationChannel.send({
         embeds: getPausedMusicDashboardEmbed(currentSong),
-        components: [getMusicDashboardEmbedButton(false)],
+        components: [getMusicDashboardEmbedButton(false, loopType)],
       });
     } else {
       dashboard = await applicationChannel.send({
         embeds: getNowPlayingMusicDashboardEmbed(currentSong),
-        components: [getMusicDashboardEmbedButton(true)],
+        components: [getMusicDashboardEmbedButton(true, loopType)],
       });
     }
   } else {
@@ -231,7 +235,7 @@ export async function handleMusicInteractionRoute(interaction) {
 
     await dashboard.edit({
       embeds: dashboard.embeds,
-      components: [getMusicDashboardEmbedButton(!isPaused(guildId))],
+      components: [getMusicDashboardEmbedButton(!isPaused(guildId), getLoop(guildId))],
     });
 
     if (customId === "skip") {
@@ -246,11 +250,13 @@ export async function handleMusicInteractionRoute(interaction) {
       await resumeMusic(interaction);
     } else if (customId === "queue") {
       await queue(interaction);
-      await dashboard.edit({
-        embeds: dashboard.embeds,
-        components: [getMusicDashboardEmbedButton(!isPaused(guildId))],
-      });
       return;
+    } else if (customId === "loop/none") {
+      await loopSong(interaction, "song");
+    } else if (customId === "loop/song") {
+      await loopSong(interaction, "queue");
+    } else if (customId === "loop/queue") {
+      await loopSong(interaction, "none");
     }
 
     updateDashboardOnQueueState(interaction);
@@ -317,7 +323,7 @@ export async function joinVoiceChannel(message) {
     const { dashboard } = getMusicChannelCache(message.guild.id);
     await dashboard.edit({
       embeds: getNowPlayingMusicDashboardEmbed(song),
-      components: [getMusicDashboardEmbedButton(true)],
+      components: [getMusicDashboardEmbedButton(true, getLoop(message.guild.id))],
     });
   });
 
@@ -346,8 +352,14 @@ export async function joinVoiceChannel(message) {
   });
 }
 
+/**
+ * 
+ * @param {ButtonInteraction} message 
+ */
 export async function leaveVoiceChannel(message) {
+  await message.deferReply({ ephemeral: true});
   await leave(message);
+  message.deleteReply().catch(() => null);
 }
 
 /**
@@ -383,9 +395,9 @@ export async function playMusic(message) {
  * @param {ButtonInteraction} message
  */
 export async function pauseMusic(message) {
-  const currentSong = getCurrentSong(message.guild.id);
-
+  await message.deferReply({ ephemeral: true });
   pause(message);
+  message.deleteReply().catch(() => null);
 }
 
 /**
@@ -393,9 +405,9 @@ export async function pauseMusic(message) {
  * @param {ButtonInteraction} message
  */
 export async function resumeMusic(message) {
-  const currentSong = getCurrentSong(message.guild.id);
-
+  await message.deferReply({ ephemeral: true });
   resume(message);
+  message.deleteReply().catch(() => null);
 }
 
 /**
@@ -403,10 +415,11 @@ export async function resumeMusic(message) {
  * @param {ButtonInteraction} message
  */
 export async function skipMusic(message) {
+  await message.deferReply({ ephemeral: true });
   await skip(message);
 
   const currentSong = getCurrentSong(message.guild.id);
-  const res = await message.reply({
+  const res = await message.editReply({
     embeds: getMusicSkipReplyMessageEmbed(message.user, currentSong),
     ephemeral: true,
   });
@@ -421,11 +434,11 @@ export async function skipMusic(message) {
  * @param {ButtonInteraction} message
  */
 export async function queue(message) {
-  const { dashboard } = getMusicChannelCache(message.guild.id);
+  await message.deferReply({ ephemeral: true });
   const q = queueList(message.channel, 1);
   const queueLength = getQueueMaxPage(message.guild.id);
 
-  await message.reply({
+  await message.editReply({
     embeds: getMusicQueueReplyMessageEmbed(message.user, q, 1, queueLength),
     components: q.length === 0 ? [] : [
       getMusicQueueReplyMessageButton(false, queueLength > 1, 1),
@@ -478,7 +491,13 @@ export async function clear(message) {}
 
 export async function nowPlaying(message) {}
 
-export async function loop(message) {}
+/**
+ * @param {ButtonInteraction} interaction 
+ * @param {"none" | "song" | "queue"} type
+ */
+export async function loopSong(interaction, type) {
+  setLoop(interaction, type);
+}
 
 export async function shuffle(message) {}
 
@@ -553,18 +572,20 @@ export async function help(message) {}
  * @param {ButtonInteraction} interaction
  */
 export async function updateDashboardOnQueueState(interaction) {
+  const { dashboard } = getMusicChannelCache(interaction.guild.id);
   const currentSong = getCurrentSong(interaction.guild.id);
   const isPlaying = !isPaused(interaction.guild.id);
+  const loopType = getLoop(interaction.guild.id);
 
   if (currentSong) {
-    await interaction.update({
+    await dashboard.edit({
       embeds: isPlaying
         ? getNowPlayingMusicDashboardEmbed(currentSong)
         : getPausedMusicDashboardEmbed(currentSong),
-      components: [getMusicDashboardEmbedButton(isPlaying)],
+      components: [getMusicDashboardEmbedButton(isPlaying, loopType)],
     });
   } else {
-    await interaction.update({
+    await dashboard.edit({
       embeds: getDefaultMusicDashboardEmbed(),
       components: [],
     });
