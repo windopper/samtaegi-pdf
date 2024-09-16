@@ -19,6 +19,7 @@ jobs:
               run: |
                 VERSION=$(jq -r .version < package.json)
                 echo $VERSION > version.txt
+                echo "PACKAGE_VERSION=$VERSION" >> $GITHUB_ENV
 
             - name: Upload version as artifact
               uses: actions/upload-artifact@v3
