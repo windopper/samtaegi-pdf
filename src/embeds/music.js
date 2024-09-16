@@ -22,6 +22,10 @@ export function getNowPlayingMusicDashboardEmbed(song) {
         "thumbnail": {
             url: song.thumbnail,
         },
+        "footer": {
+            "icon_url": song.requestedBy.displayAvatarURL(),
+            "text": `요청자: ${song.requestedBy.username}`
+        }
     }]
 }
 
@@ -46,15 +50,24 @@ export function getPausedMusicDashboardEmbed(song) {
  * 
  * @param {boolean} isPlaying 
  * @param {boolean} isDisabled
+ * @param {"none" | "song" | "queue"} loopType
  * @returns {ActionRowBuilder}
  */
-export function getMusicDashboardEmbedButton(isPlaying, isDisabled = false) {
-    const skip = new ButtonBuilder().setCustomId("skip").setLabel("스킵").setStyle(ButtonStyle.Primary).setDisabled(isDisabled);
-    const stop = new ButtonBuilder().setCustomId("stop").setLabel("정지").setStyle(ButtonStyle.Danger).setDisabled(isDisabled);
-    const pause = new ButtonBuilder().setCustomId("pause").setLabel("일시정지").setStyle(ButtonStyle.Secondary).setDisabled(isDisabled);
-    const resume = new ButtonBuilder().setCustomId("resume").setLabel("시작").setStyle(ButtonStyle.Secondary).setDisabled(isDisabled);
-    const queue = new ButtonBuilder().setCustomId("queue").setLabel("대기열").setStyle(ButtonStyle.Secondary).setDisabled(isDisabled);
-    // const func = new ButtonBuilder().setCustomId("function").setLabel("기능").setStyle(ButtonStyle.Success).setDisabled(isDisabled);
+export function getMusicDashboardEmbedButton(isPlaying, loopType = "none") {
+    const skip = new ButtonBuilder().setCustomId("skip").setLabel("스킵").setStyle(ButtonStyle.Primary)
+    const stop = new ButtonBuilder().setCustomId("stop").setLabel("정지").setStyle(ButtonStyle.Danger)
+    const pause = new ButtonBuilder().setCustomId("pause").setLabel("일시정지").setStyle(ButtonStyle.Secondary)
+    const resume = new ButtonBuilder().setCustomId("resume").setLabel("시작").setStyle(ButtonStyle.Secondary)
+    const queue = new ButtonBuilder().setCustomId("queue").setLabel("대기열").setStyle(ButtonStyle.Secondary)
+
+    let loop = new ButtonBuilder().setStyle(ButtonStyle.Secondary);
+    if (loopType === "none") {
+        loop = loop.setCustomId("loop/none").setLabel("반복 해제");
+    } else if (loopType === "song") {
+        loop = loop.setCustomId("loop/song").setLabel("곡 반복");
+    } else if (loopType === "queue") {
+        loop = loop.setCustomId("loop/queue").setLabel("대기열 반복");
+    }
 
     const row = new ActionRowBuilder().addComponents([skip, stop, isPlaying ? pause : resume, queue]);
     return row
@@ -234,7 +247,7 @@ export function getMusicQueueItemSelectMenu(queue, defaultId = "") {
         queue.map((item, index) =>
           new StringSelectMenuOptionBuilder()
             .setLabel(item.title)
-            .setValue(item.id)
+            .setValue(item.uniqueId)
             .setDefault(item.id === defaultId)
         )
       );

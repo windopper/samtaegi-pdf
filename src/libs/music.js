@@ -5,6 +5,9 @@ import { Client, PlaylistVideos, VideoCompact } from "youtubei";
 import EventEmitter from "events";
 import { YtdlCore } from "@ybd-project/ytdl-core";
 import { youtubeOauth2 } from "../index.js"
+import logger from "../logger.js";
+import { randomUUID } from "crypto";
+import { type } from "os";
 
 const youtube = new Client();
 // const agent = ytdl.createAgent(JSON.parse(fs.readFileSync('./resource/cookie.json')));
@@ -17,8 +20,10 @@ export class MusicQueueItem {
      * @param {string} url 
      * @param {string} thumbnail 
      * @param {string} duration
+     * @param {User} requestedBy
      */
-    constructor(id, title, author, url, thumbnail, duration) {
+    constructor(id, title, author, url, thumbnail, duration, requestedBy) {
+        this.uniqueId = randomUUID();
         this.id = id
         this.title = title;
         this.author = author;
@@ -26,6 +31,7 @@ export class MusicQueueItem {
         this.thumbnail = thumbnail;
         const minutes = Math.floor(duration / 60);
         this.duration = `${minutes}:${duration - minutes * 60}`;
+        this.requestedBy = requestedBy;
     }
 }
 
@@ -124,7 +130,8 @@ class MusicQueue extends EventEmitter {
          */
         this.queue = [];
         this.resource = null;
-
+        /** @type {"none" | "song" | "queue"} */
+        this.loopType = "none";
         this.connection.subscribe(this.player);
     }
 
@@ -184,7 +191,22 @@ class MusicQueue extends EventEmitter {
             /**
              * @type {MusicQueueItem}
              */
-            const song = this.queue.shift();
+            let song = null;
+            if (this.loopType === "song") {
+                song = this.currentSong();
+                if (!song) {
+                    song = this.queue.shift();
+                }
+            } else if (this.loopType === "queue") {
+                currentSong = this.currentSong();
+                if (currentSong) {
+                    this.queue.push(currentSong);
+                }
+                song = this.queue.shift();
+            } else {
+                song = this.queue.shift();
+            }
+
             const ytdl = new YtdlCore({
                 oauth2: youtubeOauth2,
             })
@@ -219,9 +241,11 @@ class MusicQueue extends EventEmitter {
     }
 
     skip() {
+        const song = this.resource.metadata.song;
         this.player.stop();
         this.playNext();
         this.emit("skip", this.resource ? this.resource.metadata.song : null);
+        return song;
     }
 
     destroy() {
@@ -230,7 +254,12 @@ class MusicQueue extends EventEmitter {
     }
 
     findSongById(id) {
-        return this.queue.find(song => song.id === id);
+        return this.queue.find(song => song.uniqueId === id);
+    }
+
+    /** @param {"none" | "song" | "queue"} type */  
+    setLoop(type) {
+        this.loopType = type;
     }
 
     get(index) {
@@ -272,15 +301,36 @@ export function join(message) {
         adapterCreator: message.guild.voiceAdapterCreator,
     })
     const queue = MusicQueue.create(message.guild.id, connection);
+
+    logger.info(`Join voice channel ${message.member.voice.channel.name} in ${message.guild.name} by ${message.author.username}`, {
+        type: 'join',
+        join: {
+            guildId: message.guild.id,
+            voiceChannelId: message.member.voice.channel.id,
+            by: message.author.id,
+        }
+    });
     return queue;
 }
 
 /**
  * 
- * @param {ButtonInteraction | Message} message 
+ * @param {ButtonInteraction} message 
  */
 export async function leave(message) {
+    const queue = MusicQueue.getByGuildId(message.guild.id);
+    const channelId = queue.connection.joinConfig.channelId;
+    const channelName = message.guild.channels.cache.get(channelId).name;
+
     MusicQueue.removeByGuildId(message.guild.id);
+    logger.info(`Leave voice channel ${channelName} in ${message.guild.name} by ${message.user.username}`, {
+        type: 'leave',
+        leave: {
+            guildId: message.guild.id,
+            voiceChannelId: channelId,
+            by: message.user.id,
+        }
+    });
 }
 
 /**
@@ -292,26 +342,36 @@ export async function addQueue(message) {
     const queue = MusicQueue.getByGuildId(message.guild.id);
     const song = message.content;
 
-    const playlist = await youtube.getPlaylist(song);
-    
     if (YtdlCore.validateURL(song)) {
-        const ytdl = new YtdlCore({
-            oauth2: youtubeOauth2,
-        })
-        const info = await ytdl.getFullInfo(song)
+        const id = YtdlCore.getURLVideoID(song);
+        const video = await youtube.getVideo(id);
 
         const queueItem = new MusicQueueItem(
-          info.videoDetails.videoId,
-          info.videoDetails.title,
-          info.videoDetails.ownerChannelName,
-          info.videoDetails.videoUrl,
-          info.videoDetails.thumbnails[0].url,
-          info.videoDetails.lengthSeconds,
+            video.id,
+            video.title,
+            video.channel?.name,
+            `https://www.youtube.com/watch?v=${video.id}`,
+            video.thumbnails[0].url,
+            video?.duration,
+            message.author
         );
 
         queue.add(queueItem);
+
+        logger.info(`Add music ${video.title} in ${message.guild.name} by ${message.author.username}`, {
+            type: 'add',
+            add: {
+                guildId: message.guild.id,
+                song: queueItem.url,
+                by: message.author.id,
+            }
+        });
         return queueItem;
-    } else if (playlist) {
+    }
+
+    const playlist = await youtube.getPlaylist(song);
+    
+    if (playlist) {
       /** @type {VideoCompact[]} */
       const videos = playlist.videos;
 
@@ -327,16 +387,55 @@ export async function addQueue(message) {
           video.channel?.name,
           url,
           video.thumbnails[0].url,
-          video.duration
+          video.duration,
+          message.author
         );
 
         queueItems.push(queueItem);
       });
 
       queue.addPlaylist(queueItems);
+
+      logger.info(`Add playlist ${playlist.title} in ${message.guild.name} by ${message.author.username}`, {
+        type: 'add_playlist',
+        add_playlist: {
+            guildId: message.guild.id,
+            playlist: playlist.id,
+            by: message.author.id,
+        }
+    });
       return queueItems;
+    } else {
+        // search video
+        const videos = await youtube.search(song, { type: "video" });
+        if (videos.items.length === 0) return null;
+
+        const video = videos.items[0];
+        const id = video.id;
+        const url = `https://www.youtube.com/watch?v=${id}`;
+        
+        const queueItem = new MusicQueueItem(
+            id,
+            video.title,
+            video.channel?.name,
+            url,
+            video.thumbnails[0].url,
+            video.duration,
+            message.author
+        );
+
+        queue.add(queueItem);
+
+        logger.info(`Add music ${video.title} in ${message.guild.name} by ${message.author.username}`, {
+            type: 'add',
+            add: {
+                guildId: message.guild.id,
+                song: queueItem.url,
+                by: message.author.id,
+            }
+        });
+        return queueItem;
     }
-    return null;
 }
 
 /**
@@ -351,20 +450,36 @@ export function getCurrentSong(guildId) {
 
 /**
  * 
- * @param {ButtonInteraction | Message} message 
+ * @param {ButtonInteraction} message 
  */
 export function pause(message) {
     const queue = MusicQueue.getByGuildId(message.guild.id);
     queue.pause();
+
+    logger.info(`Pause music in ${message.guild.name} by ${message.user.username}`, {
+        type: 'pause',
+        pause: {
+            guildId: message.guild.id,
+            by: message.user.id,
+        }
+    });
 }
 
 /**
  * 
- * @param {ButtonInteraction | Message} message 
+ * @param {ButtonInteraction} message 
  */
 export function resume(message) {
     const queue = MusicQueue.getByGuildId(message.guild.id);
     queue.resume();
+
+    logger.info(`Resume music in ${message.guild.name} by ${message.user.username}`, {
+        type: 'resume',
+        resume: {
+            guildId: message.guild.id,
+            by: message.user.id,
+        }
+    });
 }
 
 /**
@@ -379,11 +494,20 @@ export function isPaused(guildId) {
 
 /**
  * 
- * @param {ButtonInteraction | Message} message 
+ * @param {ButtonInteraction} message 
  */
 export async function skip(message) {
     const queue = MusicQueue.getByGuildId(message.guild.id);
-    queue.skip();
+    const skippedSong = queue.skip();
+
+    logger.info(`Skip music ${skippedSong.title} in ${message.guild.name} by ${message.user.username}`, {
+        type: 'skip',
+        skip: {
+            guildId: message.guild.id,
+            skippedSong: skippedSong.url,
+            by: message.user.id,
+        }
+    });
 }
 
 /**
@@ -393,8 +517,18 @@ export async function skip(message) {
  */
 export function remove(message, musicId) {
     const queue = MusicQueue.getByGuildId(message.guild.id);
-    const index = queue.queue.findIndex(item => item.id === musicId);
+    const index = queue.queue.findIndex(item => item.uniqueId === musicId);
+    const queueItem = queue.get(index);
     queue.remove(index);
+
+    logger.info(`Remove song ${queueItem.title} in ${message.guild.name} by ${message.user.username}`, {
+        type: 'remove',
+        remove: {
+            guildId: message.guild.id,
+            song: queueItem.url,
+            by: message.user.id,
+        }
+    });
 }
 
 /**
@@ -404,8 +538,50 @@ export function remove(message, musicId) {
  */
 export function top(message, musicId) {
     const queue = MusicQueue.getByGuildId(message.guild.id);
-    const index = queue.queue.findIndex(item => item.id === musicId);
+    const index = queue.queue.findIndex(item => item.uniqueId === musicId);
+    const queueItem = queue.get(index);
     queue.top(index);
+
+    logger.info(`Move top music ${queueItem.title} in ${message.guild.name} by ${message.user.username}`, {
+        type: 'top',
+        top: {
+            guildId: message.guild.id,
+            song: queueItem.url,
+            by: message.user.id,
+        }
+    });
+}
+
+/**
+ * 
+ * @param {ButtonInteraction} interaction 
+ * @param {"none" | "song" | "queue"} type
+ */
+export function setLoop(interaction, type) {
+    const queue = MusicQueue.getByGuildId(interaction.guild.id);
+    queue.setLoop(type);
+
+    logger.info(
+      `Set loop ${type} in ${interaction.guild.name} by ${interaction.user.username}`,
+      {
+        type: "loop",
+        loop: {
+          guildId: interaction.guild.id,
+          loopType: type,
+          by: interaction.user.id,
+        },
+      }
+    );
+}
+
+/**
+ * 
+ * @param {string} guildId 
+ * @returns {"none" | "song" | "queue"}
+ */
+export function getLoop(guildId) {
+    const queue = MusicQueue.getByGuildId(guildId);
+    return queue.loopType;
 }
 
 /**

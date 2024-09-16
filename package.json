@@ -1,6 +1,6 @@
 {
   "name": "samtaegi-pdf",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "",
   "main": "index.js",
   "dependencies": {
@@ -18,6 +18,9 @@
     "libsodium-wrappers": "^0.7.15",
     "mongodb": "^6.8.1",
     "samtaegi-pdf": "file:",
+    "winston": "^3.14.2",
+    "winston-daily-rotate-file": "^5.0.0",
+    "winston-mongodb": "^5.1.1",
     "youtubei": "^1.5.4"
   },
   "scripts": {

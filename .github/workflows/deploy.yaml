@@ -14,6 +14,10 @@ jobs:
             - name: Checkout
               uses: actions/checkout@v2
 
+            - name: Get version from package.json
+              id: get_version
+              run: echo "PACKAGE_VERSION=$(jq -r .version < package.json)" >> $GITHUB_ENV
+
             - name: Create .env file
               run: |
                 pwd
@@ -40,7 +44,7 @@ jobs:
                 context: .
                 file: ./Dockerfile
                 push: true
-                tags: ${{ secrets.DOCKER_USERNAME }}/${{secrets.DOCKER_IMAGE_NAME}}:latest
+                tags: ${{ secrets.DOCKER_USERNAME }}/${{secrets.DOCKER_IMAGE_NAME}}:${{ env.PACKAGE_VERSION }}
 
     deploy:
         needs: build
@@ -57,5 +61,5 @@ jobs:
                   sudo docker pull ${{ secrets.DOCKER_USERNAME }}/${{secrets.DOCKER_IMAGE_NAME}}:latest
                   sudo docker stop ${{secrets.DOCKER_CONTAINER_NAME}}
                   sudo docker rm ${{secrets.DOCKER_CONTAINER_NAME}}
-                  sudo docker run -d --restart on-failure --name ${{secrets.DOCKER_CONTAINER_NAME}} ${{ secrets.DOCKER_USERNAME }}/${{secrets.DOCKER_IMAGE_NAME}}:latest
+                  sudo docker run -d --restart on-failure --name ${{secrets.DOCKER_CONTAINER_NAME}} ${{ secrets.DOCKER_USERNAME }}/${{secrets.DOCKER_IMAGE_NAME}}:${{ env.PACKAGE_VERSION }}
 

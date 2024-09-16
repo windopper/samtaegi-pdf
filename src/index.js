@@ -10,6 +10,7 @@ import { MongoClient, ServerApiVersion } from 'mongodb';
 import { handleMusicChannelDelete, handleMusicInteractionRoute, handleMusicMessageDelete, handleMusicQueueInteractionRoute, handleMusicRoute, initiateMusicAppChannel } from './service/music.js';
 import { YtdlCore } from '@ybd-project/ytdl-core';
 import { getToken } from './api/music.js';
+import { initLogger } from './logger.js';
 
 //////////////////////////////////////////
 
@@ -50,6 +51,11 @@ export let youtubeOauth2 = null;
 
 
 //////////////////////////////////////////
+
+initLogger();
+
+//////////////////////////////////////////
+
 
 export const client = new Client({
   intents: [
