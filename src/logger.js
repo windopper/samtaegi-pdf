@@ -5,7 +5,6 @@ import { mongoClient } from './index.js';
 const { combine, timestamp, label, printf, metadata } = winston.format;
 
 const insertMetaForWinstonMongo = winston.format(logEntry => {
-    console.log(logEntry);
     logEntry.meta = logEntry.metadata;
     return logEntry;
 });
@@ -23,15 +22,13 @@ const logger = winston.createLogger({
 });
 
 export async function initLogger() {
-    if (process.env.NODE_ENV !== 'production') {
-        logger.add(new winston.transports.Console({
-            format: winston.format.combine(
-                winston.format.colorize(),
-                winston.format.simple()
-            )
-        }));
-    }
-
+    logger.add(new winston.transports.Console({
+        format: winston.format.combine(
+            winston.format.colorize(),
+            winston.format.simple()
+        )
+    }));
+    
     logger.add(new winston.transports.MongoDB({
         dbName: 'samtaegi',
         collection: 'log',

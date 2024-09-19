@@ -346,6 +346,8 @@ export async function addQueue(message) {
         const id = YtdlCore.getURLVideoID(song);
         const video = await youtube.getVideo(id);
 
+        if (!video) return null;
+
         const queueItem = new MusicQueueItem(
             video.id,
             video.title,
