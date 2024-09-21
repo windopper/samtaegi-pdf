@@ -343,8 +343,9 @@ export async function addQueue(message) {
     const song = message.content;
 
     if (YtdlCore.validateURL(song)) {
-        const id = YtdlCore.getURLVideoID(song);
-        const video = await youtube.getVideo(id);
+        const id = YtdlCore.getVideoID(song);
+        const url = `https://www.youtube.com/watch?v=${id}`;
+        const video = await youtube.getVideo(url);
 
         if (!video) return null;
 
