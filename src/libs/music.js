@@ -344,18 +344,26 @@ export async function addQueue(message) {
 
     if (YtdlCore.validateURL(song)) {
         const id = YtdlCore.getVideoID(song);
+
+        console.log(id);
+
+        const ytdl = new YtdlCore({
+            oauth2: youtubeOauth2,
+        })
         const url = `https://www.youtube.com/watch?v=${id}`;
-        const video = await youtube.getVideo(url);
+        const video = await ytdl.getBasicInfo(url);
+
+        console.log(video);
 
         if (!video) return null;
 
         const queueItem = new MusicQueueItem(
-            video.id,
-            video.title,
-            video.channel?.name,
-            `https://www.youtube.com/watch?v=${video.id}`,
-            video.thumbnails[0].url,
-            video?.duration,
+            id,
+            video.videoDetails.title,
+            video.videoDetails.ownerChannelName,
+            url,
+            video.videoDetails.thumbnails?.at(0).url,
+            video.videoDetails.lengthSeconds,
             message.author
         );
 
